@@ -40,12 +40,11 @@ for i in range(ref_length):
     transition_seq[i] = style_ref[style_sequence[i]]
 
 count = 0
-transitionImg = np.asarray(Image.open('transition.png')) / 255.0
-ghostFrame = np.zeros((864, 488, 3))
+ghostFrame = np.zeros((864, 486, 3))
 for filename in glob.glob('vid/*'):
     content_img = np.asarray(Image.open(filename)) / 255.0
     if count > 0:
-        content_img = (0.7 * content_img) + (0.3 * ghostFrame[:, 0:486, :])
+        content_img = (0.9 * content_img) + (0.1 * ghostFrame)
     content_img = tf.expand_dims(tf.cast(tf.convert_to_tensor(content_img), tf.float32), axis=0)
     new_img = ((t_const-1-(count%t_const))/t_const * transition_seq[int(count/t_const)]) + (
             (count % t_const) / t_const * transition_seq[(int(count / t_const) + 1) % ref_length])
