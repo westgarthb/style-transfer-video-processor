@@ -3,8 +3,9 @@ class Config:
     # defines the maximum height dimension in pixels. Used for down-sampling the video frames
     FRAME_HEIGHT = 200
     # defines the rate at which you want to capture frames from the input video
-    INPUT_FPS = 29
-    INPUT_VIDEO_PATH = f'{ROOT_PATH}/input_vid (2).MOV'
+    INPUT_FPS = 20
+    INPUT_VIDEO_NAME = 'input_vid.MOV'
+    INPUT_VIDEO_PATH = f'{ROOT_PATH}/{INPUT_VIDEO_NAME}'
     INPUT_FRAME_DIRECTORY = f'{ROOT_PATH}/input_frames'
     INPUT_FRAME_FILE = '{:0>4d}_frame.png'
     INPUT_FRAME_PATH = f'{INPUT_FRAME_DIRECTORY}/{INPUT_FRAME_FILE}'
@@ -14,7 +15,8 @@ class Config:
     STYLE_SEQUENCE = [0, 1]
 
     OUTPUT_FPS = 20
-    OUTPUT_VIDEO_PATH = f'{ROOT_PATH}/output_video.mp4'
+    OUTPUT_VIDEO_NAME = 'output_video.mp4'
+    OUTPUT_VIDEO_PATH = f'{ROOT_PATH}/{OUTPUT_VIDEO_NAME}'
     OUTPUT_FRAME_DIRECTORY = f'{ROOT_PATH}/output_frames'
     OUTPUT_FRAME_FILE = '{:0>4d}_frame.png'
     OUTPUT_FRAME_PATH = f'{OUTPUT_FRAME_DIRECTORY}/{OUTPUT_FRAME_FILE}'
