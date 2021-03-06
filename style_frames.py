@@ -1,3 +1,6 @@
+# Brycen Westgarth and Tristan Jogminas
+# March 5, 2021
+
 import tensorflow_hub as hub
 import numpy as np
 import tensorflow as tf
@@ -45,6 +48,7 @@ class StyleFrame:
             img = img.resize((self.frame_width, config.FRAME_HEIGHT))
             cv2.imwrite(config.INPUT_FRAME_PATH.format(count), np.asarray(img).astype(np.uint8))
             count += 1
+        self.input_frame_directory = glob.glob(f'{config.INPUT_FRAME_DIRECTORY}/*')
 
     def get_style_info(self):
         ref_count = len(config.STYLE_SEQUENCE)
@@ -67,7 +71,7 @@ class StyleFrame:
         self.input_frame_directory = glob.glob(f'{config.INPUT_FRAME_DIRECTORY}/*')
         ghost_frame = np.zeros((config.FRAME_HEIGHT, self.frame_width, 3))
         for count, filename in enumerate(sorted(self.input_frame_directory)):
-            print(f"Output frame: {count}/{len(self.input_frame_directory)}")
+            print(f"Output frame: {count+1}/{len(self.input_frame_directory)}")
             content_img = np.asarray(Image.open(filename)) / self.MAX_CHANNEL_INTENSITY
             if count > 0:
                 content_img = ((1 - config.GHOST_FRAME_TRANSPARENCY) * content_img) + (config.GHOST_FRAME_TRANSPARENCY * ghost_frame)
@@ -87,13 +91,14 @@ class StyleFrame:
 
             ghost_frame = np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width]
             plt.imsave(config.OUTPUT_FRAME_PATH.format(count), np.asarray(stylized_img))
+        self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
 
     def create_video(self):
         self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
         writer = imageio.get_writer(config.OUTPUT_VIDEO_PATH, format='mp4', mode='I', fps=config.OUTPUT_FPS)
 
         for count, filename in enumerate(sorted(self.output_frame_directory)):
-            print(f"Saving frame: {count}/{len(self.output_frame_directory)}")
+            print(f"Saving frame: {count+1}/{len(self.output_frame_directory)}")
             img = Image.open(filename)
             writer.append_data(np.asarray(img))
 

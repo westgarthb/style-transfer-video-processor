@@ -1,3 +1,6 @@
+# Brycen Westgarth and Tristan Jogminas
+# March 5, 2021
+
 class Config:
     ROOT_PATH = '.'
     # defines the maximum height dimension in pixels. Used for down-sampling the video frames
