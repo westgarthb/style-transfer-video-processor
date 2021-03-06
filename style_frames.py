@@ -23,6 +23,7 @@ class StyleFrame:
         self.input_frame_directory = glob.glob(f'{config.INPUT_FRAME_DIRECTORY}/*')
         self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
         self.style_directory = glob.glob(f'{config.STYLE_REF_DIRECTORY}/*')
+        self.ref_count = len(config.STYLE_SEQUENCE)
         for file in self.input_frame_directory + self.output_frame_directory:
             os.remove(file)
 
@@ -51,20 +52,22 @@ class StyleFrame:
         self.input_frame_directory = glob.glob(f'{config.INPUT_FRAME_DIRECTORY}/*')
 
     def get_style_info(self):
-        ref_count = len(config.STYLE_SEQUENCE)
         frame_length = len(self.input_frame_directory)
         style_refs = list()
-        self.t_const = np.ceil(frame_length / (ref_count - 1))
+        self.t_const =  frame_length if self.ref_count == 1 else np.ceil(frame_length / (self.ref_count - 1))
 
         for filename in sorted(self.style_directory):
             style_ref_img = Image.open(filename)
-            scale_constant = (config.FRAME_HEIGHT / style_ref_img.height)
+            min_dimension = min(style_ref_img.width, style_ref_img.height)
+            scale_constant = (config.FRAME_HEIGHT / min_dimension)
             style_ref_width = int(style_ref_img.width * scale_constant)
-            style_ref_img = style_ref_img.resize((style_ref_width, config.FRAME_HEIGHT))
-            style_refs.append(np.asarray(style_ref_img)[:, :, 0:3] / self.MAX_CHANNEL_INTENSITY)
+            style_ref_height = int(style_ref_img.height * scale_constant)
+            style_ref_img = style_ref_img.resize((style_ref_width, style_ref_height))
+            style_ref_crop = np.asarray(style_ref_img)[0:config.FRAME_HEIGHT, 0:config.FRAME_HEIGHT, 0:3]
+            style_refs.append(style_ref_crop / self.MAX_CHANNEL_INTENSITY)
 
         self.transition_style_seq = list()
-        for i in range(ref_count):
+        for i in range(self.ref_count):
             self.transition_style_seq.append(style_refs[config.STYLE_SEQUENCE[i]])
 
     def get_output_frames(self):
@@ -80,7 +83,7 @@ class StyleFrame:
             curr_style_img_index = int(count / self.t_const)
             prev_to_next_ratio = 1 - ((count % self.t_const) / self.t_const)
             prev_style = prev_to_next_ratio * self.transition_style_seq[curr_style_img_index]
-            next_style = (1 - prev_to_next_ratio) * self.transition_style_seq[curr_style_img_index + 1]
+            next_style = (1 - prev_to_next_ratio) * self.transition_style_seq[(curr_style_img_index + 1) % self.ref_count]
             blended_img = prev_style + next_style
 
             blended_img = tf.cast(tf.convert_to_tensor(blended_img), tf.float32)
