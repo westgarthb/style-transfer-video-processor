@@ -1,4 +1,7 @@
 .idea
-Images
-style_ref
-vid
+__pycache__
+env
+venv
+.vscode
+*.mov
+*.mp4
