@@ -1,7 +1,7 @@
 class Config:
     ROOT_PATH = '.'
     # defines the maximum height dimension in pixels. Used for down-sampling the video frames
-    FRAME_HEIGHT = 200
+    FRAME_HEIGHT = 480
     # defines the rate at which you want to capture frames from the input video
     INPUT_FPS = 20
     INPUT_VIDEO_NAME = 'input_vid.MOV'
@@ -12,7 +12,7 @@ class Config:
 
     STYLE_REF_DIRECTORY = f'{ROOT_PATH}/style_ref'
     # defines the reference style image transition sequence. Values correspond to indices in STYLE_REF_DIRECTORY
-    STYLE_SEQUENCE = [0, 1]
+    STYLE_SEQUENCE = [0, 1, 2]
 
     OUTPUT_FPS = 20
     OUTPUT_VIDEO_NAME = 'output_video.mp4'
@@ -23,5 +23,5 @@ class Config:
 
     GHOST_FRAME_TRANSPARENCY = 0.1
 
-    TENSORFLOW_CACHE_DIR = './tensorflow_cache'
+    TENSORFLOW_CACHE_DIR = f'{ROOT_PATH}/tensorflow_cache'
     TENSORFLOW_HUB_HANDLE = 'https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/2'

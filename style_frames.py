@@ -64,6 +64,7 @@ class StyleFrame:
             self.transition_style_seq.append(style_refs[config.STYLE_SEQUENCE[i]])
 
     def get_output_frames(self):
+        self.input_frame_directory = glob.glob(f'{config.INPUT_FRAME_DIRECTORY}/*')
         ghost_frame = np.zeros((config.FRAME_HEIGHT, self.frame_width, 3))
         for count, filename in enumerate(sorted(self.input_frame_directory)):
             print(f"Output frame: {count}/{len(self.input_frame_directory)}")
@@ -88,6 +89,7 @@ class StyleFrame:
             plt.imsave(config.OUTPUT_FRAME_PATH.format(count), np.asarray(stylized_img))
 
     def create_video(self):
+        self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
         writer = imageio.get_writer(config.OUTPUT_VIDEO_PATH, format='mp4', mode='I', fps=config.OUTPUT_FPS)
 
         for count, filename in enumerate(sorted(self.output_frame_directory)):

@@ -14,7 +14,7 @@ an endless range of artistically interesting videos.
 ## System Requirements
 
 This algorithm is very computationally intensive so I highly 
-recommended that optimize its performance by installing drivers for 
+recommend optimizing its performance by installing drivers for 
 [Tensorflow GPU support](https://www.tensorflow.org/install/gpu)
 if you have access to a CUDA compatible GPU. Alternatively, you can
 take advantage of the free GPU resources available through Google Colab Notebooks. 
@@ -35,8 +35,8 @@ OUTPUT_FPS		    | Defines the frame rate of the output video
 OUTPUT_VIDEO_NAME   | Filename of output video to be created
 GHOST_FRAME_TRANSPARENCY | Proportional feedback constant for frame generation. Should be a value between 0 and 1. Effects the amount change that can occur between frames and the smoothness of the transitions. 
 
-The user must find and place their own style reference images in the 'style_ref' directory. Style reference images can be
-arbitrary size.<br/>
+**The user must find and place their own style reference images in the `style_ref` directory. Style reference images can be
+arbitrary size.**<br/>
 <br/>
 Minor video time effects can be created by setting INPUT_FPS and OUTPUT_FPS to different relative values<br/>
 - INPUT_FPS > OUTPUT_FPS creates a slow motion effect
