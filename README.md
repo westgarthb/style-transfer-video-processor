@@ -1,4 +1,7 @@
 # Neural Style Transfer Transition Video Processing
+By Brycen Westgarth and Tristan Jogminas
+
+## Description
 This code extends the [neural style transfer](https://www.tensorflow.org/tutorials/generative/style_transfer) 
 image processing technique to video
 by generating smooth transitions between a sequence of 
@@ -12,7 +15,6 @@ an endless range of artistically interesting videos.
 
 
 ## System Requirements
-
 This algorithm is very computationally intensive so I highly 
 recommended that optimize its performance by installing drivers for 
 [Tensorflow GPU support](https://www.tensorflow.org/install/gpu)
@@ -45,7 +47,6 @@ Minor video time effects can be created by setting INPUT_FPS and OUTPUT_FPS to d
 
 
 ## Usage
-
 ```
 $ python3 -m venv env
 $ source /env/bin/activate

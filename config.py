@@ -1,3 +1,6 @@
+# Brycen Westgarth and Tristan Jogminas
+# March 5, 2021
+
 class Config:
     ROOT_PATH = '.'
     # defines the maximum height dimension in pixels. Used for down-sampling the video frames
@@ -23,5 +26,5 @@ class Config:
 
     GHOST_FRAME_TRANSPARENCY = 0.1
 
-    TENSORFLOW_CACHE_DIR = './tensorflow_cache'
+    TENSORFLOW_CACHE_DIR = f'{ROOT_PATH}/tensorflow_cache'
     TENSORFLOW_HUB_HANDLE = 'https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/2'
