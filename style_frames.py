@@ -54,7 +54,7 @@ class StyleFrame:
     def get_style_info(self):
         frame_length = len(self.input_frame_directory)
         style_refs = list()
-        self.t_const =  frame_length if self.ref_count == 1 else np.ceil(frame_length / (self.ref_count - 1))
+        self.t_const = frame_length if self.ref_count == 1 else np.ceil(frame_length / (self.ref_count - 1))
 
         for filename in sorted(self.style_directory):
             style_ref_img = Image.open(filename)

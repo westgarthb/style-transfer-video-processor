@@ -22,6 +22,8 @@ if you have access to a CUDA compatible GPU. Alternatively, you can
 take advantage of the free GPU resources available through Google Colab Notebooks. 
 Even with GPU acceleration the program may take several minutes to render a video. 
 
+[Colab Notebook Version](https://colab.research.google.com/drive/1ZjSvUv0Wqib6khaiqcBvRrI5GeSjFcOV?usp=sharing)
+
 ## Configuration
 All configuration of the video properties and input/output file
 locations can be set by the user in config.py 
@@ -38,7 +40,7 @@ OUTPUT_VIDEO_NAME   | Filename of output video to be created
 GHOST_FRAME_TRANSPARENCY | Proportional feedback constant for frame generation. Should be a value between 0 and 1. Effects the amount change that can occur between frames and the smoothness of the transitions. 
 
 **The user must find and place their own style reference images in the `style_ref` directory. Style reference images can be
-arbitrary size.**<br/>
+arbitrary size. Three example style reference images are given.**<br/>
 <br/>
 Minor video time effects can be created by setting INPUT_FPS and OUTPUT_FPS to different relative values<br/>
 - INPUT_FPS > OUTPUT_FPS creates a slow motion effect
