@@ -15,12 +15,12 @@ an endless range of artistically interesting videos.
 
 
 ## System Requirements
-This algorithm is very computationally intensive so I highly 
+This algorithm is computationally intensive so I highly 
 recommend optimizing its performance by installing drivers for 
 [Tensorflow GPU support](https://www.tensorflow.org/install/gpu)
 if you have access to a CUDA compatible GPU. Alternatively, you can
 take advantage of the free GPU resources available through Google Colab Notebooks. 
-Even with GPU acceleration the program may take several minutes to render a video. 
+Even with GPU acceleration, the program may take several minutes to render a video. 
 
 [Colab Notebook Version](https://colab.research.google.com/drive/1ZjSvUv0Wqib6khaiqcBvRrI5GeSjFcOV?usp=sharing)
 
@@ -37,13 +37,13 @@ INPUT_VIDEO_NAME     	| Filename of input video
 STYLE_SEQUENCE     	| List that contains the indices corresponding to the image files in the 'style_ref' folder. Defines the reference style image transition sequence. Can be arbitrary length, the rate at which the video transitions between styles will be adjusted to fit the video
 OUTPUT_FPS		    | Defines the frame rate of the output video
 OUTPUT_VIDEO_NAME   | Filename of output video to be created
-GHOST_FRAME_TRANSPARENCY | Proportional feedback constant for frame generation. Should be a value between 0 and 1. Effects the amount change that can occur between frames and the smoothness of the transitions. 
+GHOST_FRAME_TRANSPARENCY | Proportional feedback constant for frame generation. Should be a value between 0 and 1. Affects the amount change that can occur between frames and the smoothness of the transitions. 
 
 **The user must find and place their own style reference images in the `style_ref` directory. Style reference images can be
 arbitrary size. Three example style reference images are given.**<br/>
 <br/>
 Minor video time effects can be created by setting INPUT_FPS and OUTPUT_FPS to different relative values<br/>
-- INPUT_FPS > OUTPUT_FPS creates a slow motion effect
+- INPUT_FPS > OUTPUT_FPS creates a slowed time effect
 - INPUT_FPS = OUTPUT_FPS creates no time effect
 - INPUT_FPS < OUTPUT_FPS creates a timelapse effect
 
@@ -69,3 +69,5 @@ $ python3 style_frames.py
 ![file](/examples/example2_style_sequence.png)
 ##### Output Video
 ![file](/examples/example2.gif)
+
+##### [Example Video made using this program](https://youtu.be/vgl83UTciD8) 

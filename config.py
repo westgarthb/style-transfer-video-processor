@@ -18,7 +18,7 @@ class Config:
     STYLE_SEQUENCE = [0 ,1, 2]
 
     OUTPUT_FPS = 20
-    OUTPUT_VIDEO_NAME = 'output_video.mp4'
+    OUTPUT_VIDEO_NAME = 'output_video1.mp4'
     OUTPUT_VIDEO_PATH = f'{ROOT_PATH}/{OUTPUT_VIDEO_NAME}'
     OUTPUT_FRAME_DIRECTORY = f'{ROOT_PATH}/output_frames'
     OUTPUT_FRAME_FILE = '{:0>4d}_frame.png'
