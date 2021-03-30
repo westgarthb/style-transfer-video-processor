@@ -12,7 +12,7 @@ import matplotlib.pylab as plt
 import cv2
 from config import Config as config
 
-os.environ['TFHUB_CACHE_DIR'] = config.TENSORFLOW_CACHE_DIR
+os.environ['TFHUB_CACHE_DIR'] = config.TENSORFLOW_CACHE_DIRECTORY
 hub_module = hub.load(config.TENSORFLOW_HUB_HANDLE)
 
 class StyleFrame:
@@ -24,10 +24,25 @@ class StyleFrame:
         self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
         self.style_directory = glob.glob(f'{config.STYLE_REF_DIRECTORY}/*')
         self.ref_count = len(config.STYLE_SEQUENCE)
-        for file in self.input_frame_directory + self.output_frame_directory:
+        self.use_input_frame_cache = False
+
+        if len(self.input_frame_directory):
+            self.use_input_frame_cache = True
+            # Retrieve an image in the input frame dir to get the width
+            self.frame_width, _height = Image.open(self.input_frame_directory[0]).size
+
+        files_to_be_cleared = self.output_frame_directory
+        if config.CLEAR_INPUT_FRAME_CACHE:
+            files_to_be_cleared += self.input_frame_directory
+            self.use_input_frame_cache = False
+        
+        for file in files_to_be_cleared:
             os.remove(file)
 
     def get_input_frames(self):
+        if self.use_input_frame_cache:
+            print("Using cached input frames")
+            return
         vid_obj = cv2.VideoCapture(config.INPUT_VIDEO_PATH)
         frame_interval = np.floor((1.0 / config.INPUT_FPS) * 1000)
         success, image = vid_obj.read()

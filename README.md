@@ -51,7 +51,7 @@ Minor video time effects can be created by setting INPUT_FPS and OUTPUT_FPS to d
 ## Usage
 ```
 $ python3 -m venv env
-$ source /env/bin/activate
+$ source env/bin/activate
 $ pip3 install -r requirements.txt
 $ python3 style_frames.py
 ```
