@@ -38,9 +38,12 @@ STYLE_SEQUENCE     	| List that contains the indices corresponding to the image 
 OUTPUT_FPS		    | Defines the frame rate of the output video
 OUTPUT_VIDEO_NAME   | Filename of output video to be created
 GHOST_FRAME_TRANSPARENCY | Proportional feedback constant for frame generation. Should be a value between 0 and 1. Affects the amount change that can occur between frames and the smoothness of the transitions. 
+CLEAR_INPUT_FRAME_CACHE  | If True the program clears the captured input frames each run. If False, you can run multiple style sequences without having to recapture video frames
 
-**The user must find and place their own style reference images in the `style_ref` directory. Style reference images can be
-arbitrary size. Three example style reference images are given.**<br/>
+**The user must find and place their own style reference images in the `style_ref` directory. 
+ Style reference images can be
+arbitrary size. For best results, try to use style reference images with similar dimensions
+and aspect ratios. Three example style reference images are given.**<br/>
 <br/>
 Minor video time effects can be created by setting INPUT_FPS and OUTPUT_FPS to different relative values<br/>
 - INPUT_FPS > OUTPUT_FPS creates a slowed time effect
