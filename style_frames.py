@@ -54,7 +54,6 @@ class StyleFrame:
 
         count = 1
         while success:
-            print(f"Input frame: {count}")
             msec_timestamp = count * frame_interval
             vid_obj.set(cv2.CAP_PROP_POS_MSEC, msec_timestamp)
             success, image = vid_obj.read()
@@ -69,17 +68,27 @@ class StyleFrame:
     def get_style_info(self):
         frame_length = len(self.input_frame_directory)
         style_refs = list()
+        resized_ref = False
+        style_files = sorted(self.style_directory)
         self.t_const = frame_length if self.ref_count == 1 else np.ceil(frame_length / (self.ref_count - 1))
 
-        for filename in sorted(self.style_directory):
-            style_ref_img = Image.open(filename)
-            min_dimension = min(style_ref_img.width, style_ref_img.height)
-            scale_constant = (config.FRAME_HEIGHT / min_dimension)
-            style_ref_width = int(style_ref_img.width * scale_constant)
-            style_ref_height = int(style_ref_img.height * scale_constant)
-            style_ref_img = style_ref_img.resize((style_ref_width, style_ref_height))
-            style_ref_crop = np.asarray(style_ref_img)[0:config.FRAME_HEIGHT, 0:config.FRAME_HEIGHT, 0:3]
-            style_refs.append(style_ref_crop / self.MAX_CHANNEL_INTENSITY)
+        # Open first style ref and force all other style refs to match size
+        first_style_ref = Image.open(style_files.pop())
+        first_style_width, first_style_height = first_style_ref.size
+        np_first_style_ref =  np.asarray(first_style_ref)[:, :, 0:3]
+        style_refs.append(np_first_style_ref / self.MAX_CHANNEL_INTENSITY)
+
+        for filename in style_files:
+            style_ref = Image.open(filename)
+            style_ref_width, style_ref_height = style_ref.size
+            if style_ref_width != first_style_width or style_ref_height != first_style_height:
+                resized_ref = True
+                style_ref = style_ref.resize((first_style_width, first_style_height))
+            np_style_ref =  np.asarray(style_ref)[:, :, 0:3]
+            style_refs.append(np_style_ref / self.MAX_CHANNEL_INTENSITY)
+
+        if resized_ref:
+            print("WARNING: Resizing style images which may cause distortion. To avoid this, please provide style images with the same dimensions")
 
         self.transition_style_seq = list()
         for i in range(self.ref_count):
@@ -89,7 +98,8 @@ class StyleFrame:
         self.input_frame_directory = glob.glob(f'{config.INPUT_FRAME_DIRECTORY}/*')
         ghost_frame = np.zeros((config.FRAME_HEIGHT, self.frame_width, 3))
         for count, filename in enumerate(sorted(self.input_frame_directory)):
-            print(f"Output frame: {count+1}/{len(self.input_frame_directory)}")
+            if count % 10 == 0:
+                print(f"Output frame: {(count/len(self.input_frame_directory)):.0%}")
             content_img = np.asarray(Image.open(filename)) / self.MAX_CHANNEL_INTENSITY
             if count > 0:
                 content_img = ((1 - config.GHOST_FRAME_TRANSPARENCY) * content_img) + (config.GHOST_FRAME_TRANSPARENCY * ghost_frame)
@@ -116,11 +126,13 @@ class StyleFrame:
         writer = imageio.get_writer(config.OUTPUT_VIDEO_PATH, format='mp4', mode='I', fps=config.OUTPUT_FPS)
 
         for count, filename in enumerate(sorted(self.output_frame_directory)):
-            print(f"Saving frame: {count+1}/{len(self.output_frame_directory)}")
+            if count % 10 == 0:
+                print(f"Saving frame: {(count/len(self.output_frame_directory)):.0%}")
             img = Image.open(filename)
             writer.append_data(np.asarray(img))
 
         writer.close()
+        print(f"Style transfer complete! Output at {config.OUTPUT_VIDEO_PATH}")
 
 if __name__ == "__main__":
     sf = StyleFrame()
