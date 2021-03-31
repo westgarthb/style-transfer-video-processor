@@ -5,7 +5,8 @@ class Config:
     ROOT_PATH = '.'
     # defines the maximum height dimension in pixels. Used for down-sampling the video frames
     FRAME_HEIGHT = 400
-    CLEAR_INPUT_FRAME_CACHE = True
+    CLEAR_INPUT_FRAME_CACHE = False
+    TRANSITION_INTO_REF = True
     # defines the rate at which you want to capture frames from the input video
     INPUT_FPS = 20
     INPUT_VIDEO_NAME = 'input_vid.mov'
@@ -16,7 +17,7 @@ class Config:
 
     STYLE_REF_DIRECTORY = f'{ROOT_PATH}/style_ref'
     # defines the reference style image transition sequence. Values correspond to indices in STYLE_REF_DIRECTORY
-    STYLE_SEQUENCE = [0, 1, 2]
+    STYLE_SEQUENCE = [3, 1]
 
     OUTPUT_FPS = 20
     OUTPUT_VIDEO_NAME = 'output_video.mp4'
