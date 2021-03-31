@@ -39,6 +39,7 @@ OUTPUT_FPS		    | Defines the frame rate of the output video
 OUTPUT_VIDEO_NAME   | Filename of output video to be created
 GHOST_FRAME_TRANSPARENCY | Proportional feedback constant for frame generation. Should be a value between 0 and 1. Affects the amount change that can occur between frames and the smoothness of the transitions. 
 CLEAR_INPUT_FRAME_CACHE  | If True the program clears the captured input frames each run. If False, you can run multiple style sequences without having to recapture video frames
+PRESERVE_COLORS      | If True the output video will preserve the colors of the input video. If  False the program will perform standard style transfer
 
 **The user must find and place their own style reference images in the `style_ref` directory. 
  Style reference images can be

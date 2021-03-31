@@ -119,9 +119,27 @@ class StyleFrame:
             stylized_img = hub_module(tf.constant(content_img), tf.constant(blended_img)).pop()
             stylized_img = tf.squeeze(stylized_img)
 
+            if config.PRESERVE_COLORS:
+                stylized_img = self._color_correct_to_input(tf.squeeze(content_img), stylized_img)
+
             ghost_frame = np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width]
             plt.imsave(config.OUTPUT_FRAME_PATH.format(count), np.asarray(stylized_img))
         self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
+
+    def _color_correct_to_input(self, content, generated):
+        # image manipulations for compatibility with PILLOW
+        content = np.array((content * self.MAX_CHANNEL_INTENSITY)).astype(np.uint8)
+        content = Image.fromarray(content).convert('YCbCr')
+        generated = np.array((generated * self.MAX_CHANNEL_INTENSITY)).astype(np.uint8)
+        generated = Image.fromarray(generated).convert('YCbCr')
+        generated = generated.resize((self.frame_width, config.FRAME_HEIGHT))
+        # extract channels
+        _, cb, cr = content.split()
+        y, _, _ = generated.split()
+        # merge intensity and color spaces
+        color_corrected = Image.merge('YCbCr', (y, cb, cr))
+        return np.asarray(color_corrected.convert('RGB')) / 255.0
+
 
     def create_video(self):
         self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
