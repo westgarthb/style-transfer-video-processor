@@ -1,11 +1,11 @@
 # Brycen Westgarth and Tristan Jogminas
 # March 5, 2021
-
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import tensorflow_hub as hub
 import numpy as np
 import tensorflow as tf
 from PIL import Image
-import os
 import glob
 import imageio
 import matplotlib.pylab as plt
@@ -46,6 +46,8 @@ class StyleFrame:
         vid_obj = cv2.VideoCapture(config.INPUT_VIDEO_PATH)
         frame_interval = np.floor((1.0 / config.INPUT_FPS) * 1000)
         success, image = vid_obj.read()
+        if image is None:
+            raise ValueError(f"ERROR: Please provide missing video: {config.INPUT_VIDEO_PATH}")
         img = Image.fromarray(image[:, :, 0:3])
         scale_constant = (config.FRAME_HEIGHT / image.shape[0])
         self.frame_width = int(image.shape[1] * scale_constant)
