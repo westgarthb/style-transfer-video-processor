@@ -5,3 +5,4 @@ venv
 .vscode
 *.mov
 *.mp4
+!input_vid.mov

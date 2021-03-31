@@ -8,7 +8,7 @@ class Config:
     CLEAR_INPUT_FRAME_CACHE = True
     # defines the rate at which you want to capture frames from the input video
     INPUT_FPS = 20
-    INPUT_VIDEO_NAME = 'input_vid.MOV'
+    INPUT_VIDEO_NAME = 'input_vid.mov'
     INPUT_VIDEO_PATH = f'{ROOT_PATH}/{INPUT_VIDEO_NAME}'
     INPUT_FRAME_DIRECTORY = f'{ROOT_PATH}/input_frames'
     INPUT_FRAME_FILE = '{:0>4d}_frame.png'
