@@ -110,18 +110,21 @@ class StyleFrame:
             if count % 10 == 0:
                 print(f"Output frame: {(count/len(self.input_frame_directory)):.0%}")
             content_img = np.asarray(Image.open(filename)) / self.MAX_CHANNEL_INTENSITY
-            if count > 0:
+            curr_style_img_index = int(count / self.t_const)
+            prev_to_next_ratio = 1 - ((count % self.t_const) / self.t_const)
+            
+            if config.TRANSITION_INTO_REF:
+                curr_style_img_index -= 1
+            
+            if count > 0 and curr_style_img_index != -1:
                 content_img = ((1 - config.GHOST_FRAME_TRANSPARENCY) * content_img) + (config.GHOST_FRAME_TRANSPARENCY * ghost_frame)
             content_img = tf.expand_dims(tf.cast(tf.convert_to_tensor(content_img), tf.float32), axis=0)
 
-            curr_style_img_index = int(count / self.t_const)
-            prev_to_next_ratio = 1 - ((count % self.t_const) / self.t_const)
-            if config.TRANSITION_INTO_REF:
-                curr_style_img_index -= 1
             if config.TRANSITION_INTO_REF and curr_style_img_index == -1:
                 prev_style = prev_to_next_ratio * content_img
                 next_style = (1 - prev_to_next_ratio) * self.transition_style_seq[(curr_style_img_index+1) % self.ref_count]
-                blended_img = prev_style + next_style
+                stylized_img = prev_style + next_style
+                stylized_img = tf.squeeze(stylized_img)
             else:
                 prev_style = prev_to_next_ratio * self.transition_style_seq[curr_style_img_index]
                 next_style = (1 - prev_to_next_ratio) * self.transition_style_seq[(curr_style_img_index + 1) % self.ref_count]
@@ -129,16 +132,19 @@ class StyleFrame:
                 blended_img = tf.cast(tf.convert_to_tensor(blended_img), tf.float32)
                 blended_img = tf.expand_dims(blended_img, axis=0)
 
-            stylized_img = hub_module(tf.constant(content_img), tf.constant(blended_img)).pop()
-            stylized_img = tf.squeeze(stylized_img)
+                stylized_img = hub_module(tf.constant(content_img), tf.constant(blended_img)).pop()
+                stylized_img = tf.squeeze(stylized_img)
+
+                # if config.TRANSITION_INTO_REF and curr_style_img_index == -1:
+                #     stylized_img = (prev_to_next_ratio * tf.squeeze(content_img)) + ((1 - prev_to_next_ratio) * np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width])
+                ghost_frame = np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width]
 
             if config.PRESERVE_COLORS:
                 stylized_img = self._color_correct_to_input(tf.squeeze(content_img), stylized_img)
             # if config.TRANSITION_INTO_REF and curr_style_img_index == -1:
             #     stylized_img = (prev_to_next_ratio * tf.squeeze(content_img)) + ((1 - prev_to_next_ratio) * np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width])
 
-            ghost_frame = np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width]
-            plt.imsave(config.OUTPUT_FRAME_PATH.format(count), np.asarray(stylized_img))
+            plt.imsave(config.OUTPUT_FRAME_PATH.format(count), np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width])
         self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
 
     def _color_correct_to_input(self, content, generated):
