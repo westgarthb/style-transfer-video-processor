@@ -1,7 +1,6 @@
 # Brycen Westgarth and Tristan Jogminas
 # March 5, 2021
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import tensorflow_hub as hub
 import numpy as np
 import tensorflow as tf
@@ -10,8 +9,11 @@ import glob
 import imageio
 import matplotlib.pylab as plt
 import cv2
+import logging
 from config import Config as config
 
+logging.getLogger("imageio_ffmpeg").setLevel(logging.ERROR)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['TFHUB_CACHE_DIR'] = config.TENSORFLOW_CACHE_DIRECTORY
 hub_module = hub.load(config.TENSORFLOW_HUB_HANDLE)
 
@@ -75,7 +77,7 @@ class StyleFrame:
         self.t_const = frame_length if self.ref_count == 1 else np.ceil(frame_length / (self.ref_count - 1))
 
         # Open first style ref and force all other style refs to match size
-        first_style_ref = Image.open(style_files.pop())
+        first_style_ref = Image.open(style_files.pop(0))
         first_style_width, first_style_height = first_style_ref.size
         np_first_style_ref =  np.asarray(first_style_ref)[:, :, 0:3]
         style_refs.append(np_first_style_ref / self.MAX_CHANNEL_INTENSITY)
@@ -138,7 +140,7 @@ class StyleFrame:
         y, _, _ = generated.split()
         # merge intensity and color spaces
         color_corrected = Image.merge('YCbCr', (y, cb, cr))
-        return np.asarray(color_corrected.convert('RGB')) / 255.0
+        return np.asarray(color_corrected.convert('RGB')) / self.MAX_CHANNEL_INTENSITY
 
 
     def create_video(self):
