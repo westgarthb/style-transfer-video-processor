@@ -17,7 +17,7 @@ class Config:
 
     STYLE_REF_DIRECTORY = f'{ROOT_PATH}/style_ref'
     # defines the reference style image transition sequence. Values correspond to indices in STYLE_REF_DIRECTORY
-    STYLE_SEQUENCE = [1]
+    STYLE_SEQUENCE = [4, 5]
 
     OUTPUT_FPS = 20
     OUTPUT_VIDEO_NAME = 'output_video.mp4'
@@ -27,7 +27,7 @@ class Config:
     OUTPUT_FRAME_PATH = f'{OUTPUT_FRAME_DIRECTORY}/{OUTPUT_FRAME_FILE}'
 
     GHOST_FRAME_TRANSPARENCY = 0.1
-    PRESERVE_COLORS = False
+    PRESERVE_COLORS = True
 
     TENSORFLOW_CACHE_DIRECTORY = f'{ROOT_PATH}/tensorflow_cache'
     TENSORFLOW_HUB_HANDLE = 'https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/2'
