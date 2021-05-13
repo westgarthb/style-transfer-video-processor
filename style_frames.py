@@ -123,8 +123,14 @@ class StyleFrame:
             if config.TRANSITION_INTO_REF and curr_style_img_index == -1:
                 prev_style = prev_to_next_ratio * content_img
                 next_style = (1 - prev_to_next_ratio) * self.transition_style_seq[(curr_style_img_index+1) % self.ref_count]
-                stylized_img = prev_style + next_style
+                blended_img = prev_style + next_style
+                blended_img = tf.cast(tf.convert_to_tensor(blended_img), tf.float32)
+                # blended_img = tf.expand_dims(blended_img, axis=0)
+
+                stylized_img = hub_module(tf.constant(content_img), tf.constant(blended_img)).pop()
                 stylized_img = tf.squeeze(stylized_img)
+
+                ghost_frame = np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width]
             else:
                 prev_style = prev_to_next_ratio * self.transition_style_seq[curr_style_img_index]
                 next_style = (1 - prev_to_next_ratio) * self.transition_style_seq[(curr_style_img_index + 1) % self.ref_count]
@@ -135,12 +141,11 @@ class StyleFrame:
                 stylized_img = hub_module(tf.constant(content_img), tf.constant(blended_img)).pop()
                 stylized_img = tf.squeeze(stylized_img)
 
-                # if config.TRANSITION_INTO_REF and curr_style_img_index == -1:
-                #     stylized_img = (prev_to_next_ratio * tf.squeeze(content_img)) + ((1 - prev_to_next_ratio) * np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width])
                 ghost_frame = np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width]
 
             if config.PRESERVE_COLORS:
                 stylized_img = self._color_correct_to_input(tf.squeeze(content_img), stylized_img)
+
             # if config.TRANSITION_INTO_REF and curr_style_img_index == -1:
             #     stylized_img = (prev_to_next_ratio * tf.squeeze(content_img)) + ((1 - prev_to_next_ratio) * np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width])
 

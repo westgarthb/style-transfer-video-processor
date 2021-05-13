@@ -17,7 +17,7 @@ class Config:
 
     STYLE_REF_DIRECTORY = f'{ROOT_PATH}/style_ref'
     # defines the reference style image transition sequence. Values correspond to indices in STYLE_REF_DIRECTORY
-    STYLE_SEQUENCE = [3, 1]
+    STYLE_SEQUENCE = [1]
 
     OUTPUT_FPS = 20
     OUTPUT_VIDEO_NAME = 'output_video.mp4'
