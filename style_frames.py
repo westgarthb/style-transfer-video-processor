@@ -78,7 +78,7 @@ class StyleFrame:
 
         # Open first style ref and force all other style refs to match size
         first_style_ref = Image.open(style_files.pop(0))
-        # If transition to original, force all style_ref to match size of input frames so that they can be merged 
+        # If transitioning to original, force all style_ref to match size of input frames so that they can be merged 
         if None in config.STYLE_SEQUENCE:
             first_style_ref = first_style_ref.resize((self.frame_width, config.FRAME_HEIGHT))
         first_style_width, first_style_height = first_style_ref.size
@@ -88,6 +88,7 @@ class StyleFrame:
         for filename in style_files:
             style_ref = Image.open(filename)
             style_ref_width, style_ref_height = style_ref.size
+            # Resize all style_ref images to match first style_ref dimensions
             if style_ref_width != first_style_width or style_ref_height != first_style_height:
                 resized_ref = True
                 style_ref = style_ref.resize((first_style_width, first_style_height))
@@ -104,68 +105,68 @@ class StyleFrame:
             else:
                 self.transition_style_seq.append(style_refs[config.STYLE_SEQUENCE[i]])
 
+    def _trim_img(self, img):
+        return img[:config.FRAME_HEIGHT, :self.frame_width]
+
     def get_output_frames(self):
         self.input_frame_directory = glob.glob(f'{config.INPUT_FRAME_DIRECTORY}/*')
-        ghost_frame = np.zeros((config.FRAME_HEIGHT, self.frame_width, 3))
+        ghost_frame = None
         for count, filename in enumerate(sorted(self.input_frame_directory)):
             if count % 10 == 0:
                 print(f"Output frame: {(count/len(self.input_frame_directory)):.0%}")
             content_img = np.asarray(Image.open(filename)) / self.MAX_CHANNEL_INTENSITY
             curr_style_img_index = int(count / self.t_const)
-            prev_to_next_ratio = 1 - ((count % self.t_const) / self.t_const)
+            mix_ratio = 1 - ((count % self.t_const) / self.t_const)
+            inv_mix_ratio = 1 - mix_ratio
 
-            original_to_ref = False
-            ref_to_original = False
-            if self.transition_style_seq[(curr_style_img_index) % self.ref_count] is None:
-                original_to_ref = True
-            elif self.transition_style_seq[(curr_style_img_index + 1) % self.ref_count] is None:
-                ref_to_original = True
+            prev_image = self.transition_style_seq[curr_style_img_index]
+            next_image = self.transition_style_seq[curr_style_img_index + 1]
+            
+            prev_is_content_img = False
+            next_is_content_img = False
+            if prev_image is None:
+                prev_image = content_img
+                prev_is_content_img = True
+            if next_image is None:
+                next_image = content_img
+                next_is_content_img = True
+            # If both, don't need to apply style transfer
+            if prev_is_content_img and next_is_content_img:
+                ghost_frame = content_img
+                plt.imsave(config.OUTPUT_FRAME_PATH.format(count), ghost_frame)
+                continue
             
             if count > 0:
                 content_img = ((1 - config.GHOST_FRAME_TRANSPARENCY) * content_img) + (config.GHOST_FRAME_TRANSPARENCY * ghost_frame)
-            content_img = tf.expand_dims(tf.cast(tf.convert_to_tensor(content_img), tf.float32), axis=0)
+            content_img = tf.cast(tf.convert_to_tensor(content_img), tf.float32)
 
-            if original_to_ref or ref_to_original:
-                # Blend original content image with first style_ref image 
-                if original_to_ref:
-                    prev_style = prev_to_next_ratio * content_img
-                    next_style = (1 - prev_to_next_ratio) * self.transition_style_seq[(curr_style_img_index + 1) % self.ref_count]
-                elif ref_to_original:
-                    prev_style = prev_to_next_ratio * self.transition_style_seq[curr_style_img_index]
-                    next_style = (1 - prev_to_next_ratio) * content_img
-                blended_img = prev_style + next_style
-                blended_img = tf.cast(tf.convert_to_tensor(blended_img), tf.float32)
+            prev_style = mix_ratio * prev_image
+            next_style = inv_mix_ratio * next_image
+            blended_img = prev_style + next_style
+            blended_img = tf.cast(tf.convert_to_tensor(blended_img), tf.float32)
+            
+            expanded_blended_img = tf.constant(tf.expand_dims(blended_img, axis=0))
+            expanded_content_img = tf.constant(tf.expand_dims(content_img, axis=0))
+            # Apply style transfer
+            stylized_img = hub_module(expanded_content_img, expanded_blended_img).pop()
+            stylized_img = tf.squeeze(stylized_img)
 
-                stylized_img = hub_module(tf.constant(content_img), tf.constant(blended_img)).pop()
-                stylized_img = tf.squeeze(stylized_img)
-
-                # Re-blend stylized_img with original content to remove artifacts
-                if original_to_ref:
-                    prev_style = prev_to_next_ratio * tf.squeeze(content_img)
-                    next_style = (1 - prev_to_next_ratio) * stylized_img
-                    stylized_img = prev_style + next_style[:config.FRAME_HEIGHT, :self.frame_width]
-                elif ref_to_original:
-                    prev_style = prev_to_next_ratio * stylized_img
-                    next_style = (1 - prev_to_next_ratio) * tf.squeeze(content_img)
-                    stylized_img = prev_style[:config.FRAME_HEIGHT, :self.frame_width] + next_style
-
-                ghost_frame = np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width]
-            else:
-                prev_style = prev_to_next_ratio * self.transition_style_seq[curr_style_img_index]
-                next_style = (1 - prev_to_next_ratio) * self.transition_style_seq[(curr_style_img_index + 1) % self.ref_count]
-                blended_img = prev_style + next_style
-                blended_img = tf.cast(tf.convert_to_tensor(blended_img), tf.float32)
-                blended_img = tf.expand_dims(blended_img, axis=0)
-
-                stylized_img = hub_module(tf.constant(content_img), tf.constant(blended_img)).pop()
-                stylized_img = tf.squeeze(stylized_img)
-
-                ghost_frame = np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width]
+            # Re-blend
+            if prev_is_content_img:
+                prev_style = mix_ratio * content_img
+                next_style = inv_mix_ratio * stylized_img
+            if next_is_content_img:
+                prev_style = mix_ratio * stylized_img
+                next_style = inv_mix_ratio * content_img
+            if prev_is_content_img or next_is_content_img:
+                stylized_img = self._trim_img(prev_style) + self._trim_img(next_style)
 
             if config.PRESERVE_COLORS:
-                stylized_img = self._color_correct_to_input(tf.squeeze(content_img), stylized_img)
+                stylized_img = self._color_correct_to_input(content_img, stylized_img)
+            
+            ghost_frame = np.asarray(stylized_img)
 
-            plt.imsave(config.OUTPUT_FRAME_PATH.format(count), np.asarray(stylized_img)[:config.FRAME_HEIGHT, :self.frame_width])
+            plt.imsave(config.OUTPUT_FRAME_PATH.format(count), ghost_frame)
         self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
 
     def _color_correct_to_input(self, content, generated):
