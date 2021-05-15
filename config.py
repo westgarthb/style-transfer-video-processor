@@ -16,6 +16,7 @@ class Config:
 
     STYLE_REF_DIRECTORY = f'{ROOT_PATH}/style_ref'
     # defines the reference style image transition sequence. Values correspond to indices in STYLE_REF_DIRECTORY
+    # add None in the sequence to NOT apply style transfer for part of the video (ie. [None, 0, 1, 2])  
     STYLE_SEQUENCE = [0, 1, 2]
 
     OUTPUT_FPS = 20
