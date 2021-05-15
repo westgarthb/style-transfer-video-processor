@@ -137,14 +137,14 @@ class StyleFrame:
                 content_img = ((1 - config.GHOST_FRAME_TRANSPARENCY) * content_img) + (config.GHOST_FRAME_TRANSPARENCY * ghost_frame)
             content_img = tf.cast(tf.convert_to_tensor(content_img), tf.float32)
 
-            if not prev_is_content_img and not next_is_content_img:
-                prev_style = mix_ratio * prev_image
-                next_style = inv_mix_ratio * next_image
-                blended_img = prev_style + next_style
-            elif prev_is_content_img:
+            if prev_is_content_img:
                 blended_img = next_image
             elif next_is_content_img:
                 blended_img = prev_image
+            else:
+                prev_style = mix_ratio * prev_image
+                next_style = inv_mix_ratio * next_image
+                blended_img = prev_style + next_style
 
             blended_img = tf.cast(tf.convert_to_tensor(blended_img), tf.float32)
             expanded_blended_img = tf.constant(tf.expand_dims(blended_img, axis=0))
