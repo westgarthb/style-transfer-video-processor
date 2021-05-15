@@ -78,9 +78,6 @@ class StyleFrame:
 
         # Open first style ref and force all other style refs to match size
         first_style_ref = Image.open(style_files.pop(0))
-        # If transitioning to original, force all style_ref to match size of input frames so that they can be merged 
-        if None in config.STYLE_SEQUENCE:
-            first_style_ref = first_style_ref.resize((self.frame_width, config.FRAME_HEIGHT))
         first_style_width, first_style_height = first_style_ref.size
         np_first_style_ref =  np.asarray(first_style_ref)[:, :, 0:3]
         style_refs.append(np_first_style_ref / self.MAX_CHANNEL_INTENSITY)
@@ -140,11 +137,16 @@ class StyleFrame:
                 content_img = ((1 - config.GHOST_FRAME_TRANSPARENCY) * content_img) + (config.GHOST_FRAME_TRANSPARENCY * ghost_frame)
             content_img = tf.cast(tf.convert_to_tensor(content_img), tf.float32)
 
-            prev_style = mix_ratio * prev_image
-            next_style = inv_mix_ratio * next_image
-            blended_img = prev_style + next_style
+            if not prev_is_content_img and not next_is_content_img:
+                prev_style = mix_ratio * prev_image
+                next_style = inv_mix_ratio * next_image
+                blended_img = prev_style + next_style
+            elif prev_is_content_img:
+                blended_img = next_image
+            elif next_is_content_img:
+                blended_img = prev_image
+
             blended_img = tf.cast(tf.convert_to_tensor(blended_img), tf.float32)
-            
             expanded_blended_img = tf.constant(tf.expand_dims(blended_img, axis=0))
             expanded_content_img = tf.constant(tf.expand_dims(content_img, axis=0))
             # Apply style transfer
@@ -164,7 +166,7 @@ class StyleFrame:
             if config.PRESERVE_COLORS:
                 stylized_img = self._color_correct_to_input(content_img, stylized_img)
             
-            ghost_frame = np.asarray(stylized_img)
+            ghost_frame = np.asarray(self._trim_img(stylized_img))
 
             plt.imsave(config.OUTPUT_FRAME_PATH.format(count), ghost_frame)
         self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
