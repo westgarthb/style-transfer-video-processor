@@ -1,6 +1,7 @@
 # Brycen Westgarth and Tristan Jogminas
 # March 5, 2021
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow_hub as hub
 import numpy as np
 import tensorflow as tf
@@ -12,8 +13,6 @@ import cv2
 import logging
 from config import Config as config
 
-logging.getLogger("imageio_ffmpeg").setLevel(logging.ERROR)
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['TFHUB_CACHE_DIR'] = config.TENSORFLOW_CACHE_DIRECTORY
 hub_module = hub.load(config.TENSORFLOW_HUB_HANDLE)
 

@@ -4,7 +4,7 @@
 class Config:
     ROOT_PATH = '.'
     # defines the maximum height dimension in pixels. Used for down-sampling the video frames
-    FRAME_HEIGHT = 400
+    FRAME_HEIGHT = 360
     CLEAR_INPUT_FRAME_CACHE = True
     # defines the rate at which you want to capture frames from the input video
     INPUT_FPS = 20
