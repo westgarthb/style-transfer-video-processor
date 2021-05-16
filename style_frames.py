@@ -8,7 +8,7 @@ import tensorflow as tf
 from PIL import Image
 import glob
 import imageio
-import matplotlib.pylab as plt
+# import matplotlib.pylab as plt
 import cv2
 import logging
 from config import Config
@@ -25,23 +25,24 @@ class StyleFrame:
         self.output_frame_directory = glob.glob(f'{self.conf.OUTPUT_FRAME_DIRECTORY}/*')
         self.style_directory = glob.glob(f'{self.conf.STYLE_REF_DIRECTORY}/*')
         self.ref_count = len(self.conf.STYLE_SEQUENCE)
-        self.use_input_frame_cache = False
-
-        if len(self.input_frame_directory):
-            self.use_input_frame_cache = True
-            # Retrieve an image in the input frame dir to get the width
-            self.frame_width, _height = Image.open(self.input_frame_directory[0]).size
 
         files_to_be_cleared = self.output_frame_directory
         if self.conf.CLEAR_INPUT_FRAME_CACHE:
             files_to_be_cleared += self.input_frame_directory
-            self.use_input_frame_cache = False
         
         for file in files_to_be_cleared:
             os.remove(file)
+        
+        # Update contents of directory after deletion
+        self.input_frame_directory = glob.glob(f'{self.conf.INPUT_FRAME_DIRECTORY}/*')
+        self.output_frame_directory = glob.glob(f'{self.conf.OUTPUT_FRAME_DIRECTORY}/*')
+
+        if len(self.input_frame_directory):
+            # Retrieve an image in the input frame dir to get the width
+            self.frame_width = cv2.imread(self.input_frame_directory[0]).shape[1]
 
     def get_input_frames(self):
-        if self.use_input_frame_cache:
+        if len(self.input_frame_directory):
             print("Using cached input frames")
             return
         vid_obj = cv2.VideoCapture(self.conf.INPUT_VIDEO_PATH)
@@ -49,11 +50,10 @@ class StyleFrame:
         success, image = vid_obj.read()
         if image is None:
             raise ValueError(f"ERROR: Please provide missing video: {self.conf.INPUT_VIDEO_PATH}")
-        img = Image.fromarray(image[:, :, 0:3])
         scale_constant = (self.conf.FRAME_HEIGHT / image.shape[0])
         self.frame_width = int(image.shape[1] * scale_constant)
-        img = img.resize((self.frame_width, self.conf.FRAME_HEIGHT))
-        cv2.imwrite(self.conf.INPUT_FRAME_PATH.format(0), np.asarray(img).astype(np.uint8))
+        image = cv2.resize(image, (self.frame_width, self.conf.FRAME_HEIGHT))
+        cv2.imwrite(self.conf.INPUT_FRAME_PATH.format(0), image.astype(np.uint8))
 
         count = 1
         while success:
@@ -62,9 +62,8 @@ class StyleFrame:
             success, image = vid_obj.read()
             if not success:
                 break
-            img = Image.fromarray(image[:, :, 0:3])
-            img = img.resize((self.frame_width, self.conf.FRAME_HEIGHT))
-            cv2.imwrite(self.conf.INPUT_FRAME_PATH.format(count), np.asarray(img).astype(np.uint8))
+            image = cv2.resize(image, (self.frame_width, self.conf.FRAME_HEIGHT))
+            cv2.imwrite(self.conf.INPUT_FRAME_PATH.format(count), image.astype(np.uint8))
             count += 1
         self.input_frame_directory = glob.glob(f'{self.conf.INPUT_FRAME_DIRECTORY}/*')
 
@@ -76,20 +75,20 @@ class StyleFrame:
         self.t_const = frame_length if self.ref_count == 1 else np.ceil(frame_length / (self.ref_count - 1))
 
         # Open first style ref and force all other style refs to match size
-        first_style_ref = Image.open(style_files.pop(0))
-        first_style_width, first_style_height = first_style_ref.size
-        np_first_style_ref =  np.asarray(first_style_ref)[:, :, 0:3]
-        style_refs.append(np_first_style_ref / self.MAX_CHANNEL_INTENSITY)
+        first_style_ref = cv2.imread(style_files.pop(0))
+        first_style_ref = cv2.cvtColor(first_style_ref, cv2.COLOR_BGR2RGB)
+        first_style_height, first_style_width, _rgb = first_style_ref.shape
+        style_refs.append(first_style_ref / self.MAX_CHANNEL_INTENSITY)
 
         for filename in style_files:
-            style_ref = Image.open(filename)
-            style_ref_width, style_ref_height = style_ref.size
+            style_ref = cv2.imread(filename)
+            style_ref = cv2.cvtColor(style_ref, cv2.COLOR_BGR2RGB)
+            style_ref_height, style_ref_width, _rgb = style_ref.shape
             # Resize all style_ref images to match first style_ref dimensions
             if style_ref_width != first_style_width or style_ref_height != first_style_height:
                 resized_ref = True
-                style_ref = style_ref.resize((first_style_width, first_style_height))
-            np_style_ref =  np.asarray(style_ref)[:, :, 0:3]
-            style_refs.append(np_style_ref / self.MAX_CHANNEL_INTENSITY)
+                style_ref = cv2.resize(style_ref, (first_style_width, first_style_height))
+            style_refs.append(style_ref / self.MAX_CHANNEL_INTENSITY)
 
         if resized_ref:
             print("WARNING: Resizing style images which may cause distortion. To avoid this, please provide style images with the same dimensions")
@@ -110,7 +109,8 @@ class StyleFrame:
         for count, filename in enumerate(sorted(self.input_frame_directory)):
             if count % 10 == 0:
                 print(f"Output frame: {(count/len(self.input_frame_directory)):.0%}")
-            content_img = np.asarray(Image.open(filename)) / self.MAX_CHANNEL_INTENSITY
+            content_img = cv2.imread(filename) 
+            content_img = cv2.cvtColor(content_img, cv2.COLOR_BGR2RGB) / self.MAX_CHANNEL_INTENSITY
             curr_style_img_index = int(count / self.t_const)
             mix_ratio = 1 - ((count % self.t_const) / self.t_const)
             inv_mix_ratio = 1 - mix_ratio
@@ -128,8 +128,7 @@ class StyleFrame:
                 next_is_content_img = True
             # If both, don't need to apply style transfer
             if prev_is_content_img and next_is_content_img:
-                ghost_frame = content_img
-                plt.imsave(self.conf.OUTPUT_FRAME_PATH.format(count), ghost_frame)
+                cv2.imwrite(self.conf.OUTPUT_FRAME_PATH.format(count), ghost_frame)
                 continue
             
             if count > 0:
@@ -167,7 +166,8 @@ class StyleFrame:
             
             ghost_frame = np.asarray(self._trim_img(stylized_img))
 
-            plt.imsave(self.conf.OUTPUT_FRAME_PATH.format(count), ghost_frame)
+            ghost_frame = cv2.cvtColor(ghost_frame, cv2.COLOR_RGB2BGR) * self.MAX_CHANNEL_INTENSITY
+            cv2.imwrite(self.conf.OUTPUT_FRAME_PATH.format(count), ghost_frame)
         self.output_frame_directory = glob.glob(f'{self.conf.OUTPUT_FRAME_DIRECTORY}/*')
 
     def _color_correct_to_input(self, content, generated):
@@ -192,8 +192,9 @@ class StyleFrame:
         for count, filename in enumerate(sorted(self.output_frame_directory)):
             if count % 10 == 0:
                 print(f"Saving frame: {(count/len(self.output_frame_directory)):.0%}")
-            img = Image.open(filename)
-            writer.append_data(np.asarray(img))
+            image = cv2.imread(filename)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            writer.append_data(image)
 
         writer.close()
         print(f"Style transfer complete! Output at {self.conf.OUTPUT_VIDEO_PATH}")
