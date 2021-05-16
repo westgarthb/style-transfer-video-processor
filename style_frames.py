@@ -11,20 +11,20 @@ import imageio
 import matplotlib.pylab as plt
 import cv2
 import logging
-from config import Config as config
-
-os.environ['TFHUB_CACHE_DIR'] = config.TENSORFLOW_CACHE_DIRECTORY
-hub_module = hub.load(config.TENSORFLOW_HUB_HANDLE)
+from config import Config
 
 class StyleFrame:
 
     MAX_CHANNEL_INTENSITY = 255.0
 
-    def __init__(self):
-        self.input_frame_directory = glob.glob(f'{config.INPUT_FRAME_DIRECTORY}/*')
-        self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
-        self.style_directory = glob.glob(f'{config.STYLE_REF_DIRECTORY}/*')
-        self.ref_count = len(config.STYLE_SEQUENCE)
+    def __init__(self, conf=Config):
+        self.conf = conf
+        os.environ['TFHUB_CACHE_DIR'] = self.conf.TENSORFLOW_CACHE_DIRECTORY
+        self.hub_module = hub.load(self.conf.TENSORFLOW_HUB_HANDLE)
+        self.input_frame_directory = glob.glob(f'{self.conf.INPUT_FRAME_DIRECTORY}/*')
+        self.output_frame_directory = glob.glob(f'{self.conf.OUTPUT_FRAME_DIRECTORY}/*')
+        self.style_directory = glob.glob(f'{self.conf.STYLE_REF_DIRECTORY}/*')
+        self.ref_count = len(self.conf.STYLE_SEQUENCE)
         self.use_input_frame_cache = False
 
         if len(self.input_frame_directory):
@@ -33,7 +33,7 @@ class StyleFrame:
             self.frame_width, _height = Image.open(self.input_frame_directory[0]).size
 
         files_to_be_cleared = self.output_frame_directory
-        if config.CLEAR_INPUT_FRAME_CACHE:
+        if self.conf.CLEAR_INPUT_FRAME_CACHE:
             files_to_be_cleared += self.input_frame_directory
             self.use_input_frame_cache = False
         
@@ -44,16 +44,16 @@ class StyleFrame:
         if self.use_input_frame_cache:
             print("Using cached input frames")
             return
-        vid_obj = cv2.VideoCapture(config.INPUT_VIDEO_PATH)
-        frame_interval = np.floor((1.0 / config.INPUT_FPS) * 1000)
+        vid_obj = cv2.VideoCapture(self.conf.INPUT_VIDEO_PATH)
+        frame_interval = np.floor((1.0 / self.conf.INPUT_FPS) * 1000)
         success, image = vid_obj.read()
         if image is None:
-            raise ValueError(f"ERROR: Please provide missing video: {config.INPUT_VIDEO_PATH}")
+            raise ValueError(f"ERROR: Please provide missing video: {self.conf.INPUT_VIDEO_PATH}")
         img = Image.fromarray(image[:, :, 0:3])
-        scale_constant = (config.FRAME_HEIGHT / image.shape[0])
+        scale_constant = (self.conf.FRAME_HEIGHT / image.shape[0])
         self.frame_width = int(image.shape[1] * scale_constant)
-        img = img.resize((self.frame_width, config.FRAME_HEIGHT))
-        cv2.imwrite(config.INPUT_FRAME_PATH.format(0), np.asarray(img).astype(np.uint8))
+        img = img.resize((self.frame_width, self.conf.FRAME_HEIGHT))
+        cv2.imwrite(self.conf.INPUT_FRAME_PATH.format(0), np.asarray(img).astype(np.uint8))
 
         count = 1
         while success:
@@ -63,10 +63,10 @@ class StyleFrame:
             if not success:
                 break
             img = Image.fromarray(image[:, :, 0:3])
-            img = img.resize((self.frame_width, config.FRAME_HEIGHT))
-            cv2.imwrite(config.INPUT_FRAME_PATH.format(count), np.asarray(img).astype(np.uint8))
+            img = img.resize((self.frame_width, self.conf.FRAME_HEIGHT))
+            cv2.imwrite(self.conf.INPUT_FRAME_PATH.format(count), np.asarray(img).astype(np.uint8))
             count += 1
-        self.input_frame_directory = glob.glob(f'{config.INPUT_FRAME_DIRECTORY}/*')
+        self.input_frame_directory = glob.glob(f'{self.conf.INPUT_FRAME_DIRECTORY}/*')
 
     def get_style_info(self):
         frame_length = len(self.input_frame_directory)
@@ -96,16 +96,16 @@ class StyleFrame:
 
         self.transition_style_seq = list()
         for i in range(self.ref_count):
-            if config.STYLE_SEQUENCE[i] is None:
+            if self.conf.STYLE_SEQUENCE[i] is None:
                 self.transition_style_seq.append(None)
             else:
-                self.transition_style_seq.append(style_refs[config.STYLE_SEQUENCE[i]])
+                self.transition_style_seq.append(style_refs[self.conf.STYLE_SEQUENCE[i]])
 
     def _trim_img(self, img):
-        return img[:config.FRAME_HEIGHT, :self.frame_width]
+        return img[:self.conf.FRAME_HEIGHT, :self.frame_width]
 
     def get_output_frames(self):
-        self.input_frame_directory = glob.glob(f'{config.INPUT_FRAME_DIRECTORY}/*')
+        self.input_frame_directory = glob.glob(f'{self.conf.INPUT_FRAME_DIRECTORY}/*')
         ghost_frame = None
         for count, filename in enumerate(sorted(self.input_frame_directory)):
             if count % 10 == 0:
@@ -129,11 +129,11 @@ class StyleFrame:
             # If both, don't need to apply style transfer
             if prev_is_content_img and next_is_content_img:
                 ghost_frame = content_img
-                plt.imsave(config.OUTPUT_FRAME_PATH.format(count), ghost_frame)
+                plt.imsave(self.conf.OUTPUT_FRAME_PATH.format(count), ghost_frame)
                 continue
             
             if count > 0:
-                content_img = ((1 - config.GHOST_FRAME_TRANSPARENCY) * content_img) + (config.GHOST_FRAME_TRANSPARENCY * ghost_frame)
+                content_img = ((1 - self.conf.GHOST_FRAME_TRANSPARENCY) * content_img) + (self.conf.GHOST_FRAME_TRANSPARENCY * ghost_frame)
             content_img = tf.cast(tf.convert_to_tensor(content_img), tf.float32)
 
             if prev_is_content_img:
@@ -149,7 +149,7 @@ class StyleFrame:
             expanded_blended_img = tf.constant(tf.expand_dims(blended_img, axis=0))
             expanded_content_img = tf.constant(tf.expand_dims(content_img, axis=0))
             # Apply style transfer
-            stylized_img = hub_module(expanded_content_img, expanded_blended_img).pop()
+            stylized_img = self.hub_module(expanded_content_img, expanded_blended_img).pop()
             stylized_img = tf.squeeze(stylized_img)
 
             # Re-blend
@@ -162,13 +162,13 @@ class StyleFrame:
             if prev_is_content_img or next_is_content_img:
                 stylized_img = self._trim_img(prev_style) + self._trim_img(next_style)
 
-            if config.PRESERVE_COLORS:
+            if self.conf.PRESERVE_COLORS:
                 stylized_img = self._color_correct_to_input(content_img, stylized_img)
             
             ghost_frame = np.asarray(self._trim_img(stylized_img))
 
-            plt.imsave(config.OUTPUT_FRAME_PATH.format(count), ghost_frame)
-        self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
+            plt.imsave(self.conf.OUTPUT_FRAME_PATH.format(count), ghost_frame)
+        self.output_frame_directory = glob.glob(f'{self.conf.OUTPUT_FRAME_DIRECTORY}/*')
 
     def _color_correct_to_input(self, content, generated):
         # image manipulations for compatibility with PILLOW
@@ -176,7 +176,7 @@ class StyleFrame:
         content = Image.fromarray(content).convert('YCbCr')
         generated = np.array((generated * self.MAX_CHANNEL_INTENSITY)).astype(np.uint8)
         generated = Image.fromarray(generated).convert('YCbCr')
-        generated = generated.resize((self.frame_width, config.FRAME_HEIGHT))
+        generated = generated.resize((self.frame_width, self.conf.FRAME_HEIGHT))
         # extract channels
         _, cb, cr = content.split()
         y, _, _ = generated.split()
@@ -186,8 +186,8 @@ class StyleFrame:
 
 
     def create_video(self):
-        self.output_frame_directory = glob.glob(f'{config.OUTPUT_FRAME_DIRECTORY}/*')
-        writer = imageio.get_writer(config.OUTPUT_VIDEO_PATH, format='mp4', mode='I', fps=config.OUTPUT_FPS)
+        self.output_frame_directory = glob.glob(f'{self.conf.OUTPUT_FRAME_DIRECTORY}/*')
+        writer = imageio.get_writer(self.conf.OUTPUT_VIDEO_PATH, format='mp4', mode='I', fps=self.conf.OUTPUT_FPS)
 
         for count, filename in enumerate(sorted(self.output_frame_directory)):
             if count % 10 == 0:
@@ -196,15 +196,17 @@ class StyleFrame:
             writer.append_data(np.asarray(img))
 
         writer.close()
-        print(f"Style transfer complete! Output at {config.OUTPUT_VIDEO_PATH}")
+        print(f"Style transfer complete! Output at {self.conf.OUTPUT_VIDEO_PATH}")
+
+    def run(self):
+        print("Getting input frames")
+        self.get_input_frames()
+        print("Getting style info")
+        self.get_style_info()
+        print("Getting output frames")
+        self.get_output_frames()
+        print("Saving video")
+        self.create_video()
 
 if __name__ == "__main__":
-    sf = StyleFrame()
-    print("Getting input frames")
-    sf.get_input_frames()
-    print("Getting style info")
-    sf.get_style_info()
-    print("Getting output frames")
-    sf.get_output_frames()
-    print("Saving video")
-    sf.create_video()
+    StyleFrame().run()
