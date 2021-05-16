@@ -7,8 +7,6 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 import glob
-import imageio
-# import matplotlib.pylab as plt
 import cv2
 import logging
 from config import Config
@@ -187,16 +185,16 @@ class StyleFrame:
 
     def create_video(self):
         self.output_frame_directory = glob.glob(f'{self.conf.OUTPUT_FRAME_DIRECTORY}/*')
-        writer = imageio.get_writer(self.conf.OUTPUT_VIDEO_PATH, format='mp4', mode='I', fps=self.conf.OUTPUT_FPS)
+        fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+        video_writer = cv2.VideoWriter(self.conf.OUTPUT_VIDEO_PATH, fourcc, self.conf.OUTPUT_FPS, (self.frame_width, self.conf.FRAME_HEIGHT))
 
         for count, filename in enumerate(sorted(self.output_frame_directory)):
             if count % 10 == 0:
                 print(f"Saving frame: {(count/len(self.output_frame_directory)):.0%}")
             image = cv2.imread(filename)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            writer.append_data(image)
+            video_writer.write(image)
 
-        writer.close()
+        video_writer.release()
         print(f"Style transfer complete! Output at {self.conf.OUTPUT_VIDEO_PATH}")
 
     def run(self):
