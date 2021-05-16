@@ -171,18 +171,18 @@ class StyleFrame:
         self.output_frame_directory = glob.glob(f'{self.conf.OUTPUT_FRAME_DIRECTORY}/*')
 
     def _color_correct_to_input(self, content, generated):
-        # image manipulations for compatibility with PILLOW
+        # image manipulations for compatibility with opencv
         content = np.array((content * self.MAX_CHANNEL_INTENSITY)).astype(np.uint8)
-        content = Image.fromarray(content).convert('YCbCr')
+        content = cv2.cvtColor(content, cv2.COLOR_BGR2YCR_CB)
         generated = np.array((generated * self.MAX_CHANNEL_INTENSITY)).astype(np.uint8)
-        generated = Image.fromarray(generated).convert('YCbCr')
-        generated = generated.resize((self.frame_width, self.conf.FRAME_HEIGHT))
-        # extract channels
-        _, cb, cr = content.split()
-        y, _, _ = generated.split()
-        # merge intensity and color spaces
-        color_corrected = Image.merge('YCbCr', (y, cb, cr))
-        return np.asarray(color_corrected.convert('RGB')) / self.MAX_CHANNEL_INTENSITY
+        generated = cv2.cvtColor(generated, cv2.COLOR_BGR2YCR_CB)
+        generated = self._trim_img(generated)
+        # extract channels, merge intensity and color spaces
+        color_corrected = np.zeros(generated.shape, dtype=np.uint8)
+        color_corrected[:, :, 0] = generated[:, :, 0]
+        color_corrected[:, :, 1] = content[:, :, 1]
+        color_corrected[:, :, 2] = content[:, :, 2]
+        return cv2.cvtColor(color_corrected, cv2.COLOR_YCrCb2BGR) / self.MAX_CHANNEL_INTENSITY
 
 
     def create_video(self):
