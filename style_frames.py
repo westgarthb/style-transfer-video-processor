@@ -5,10 +5,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow_hub as hub
 import numpy as np
 import tensorflow as tf
-from PIL import Image
 import glob
 import imageio
-# import matplotlib.pylab as plt
 import cv2
 import logging
 from config import Config
