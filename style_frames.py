@@ -5,7 +5,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow_hub as hub
 import numpy as np
 import tensorflow as tf
-from PIL import Image
 import glob
 import cv2
 import logging
@@ -126,7 +125,8 @@ class StyleFrame:
                 next_is_content_img = True
             # If both, don't need to apply style transfer
             if prev_is_content_img and next_is_content_img:
-                cv2.imwrite(self.conf.OUTPUT_FRAME_PATH.format(count), ghost_frame)
+                temp_ghost_frame = cv2.cvtColor(ghost_frame, cv2.COLOR_RGB2BGR) * self.MAX_CHANNEL_INTENSITY
+                cv2.imwrite(self.conf.OUTPUT_FRAME_PATH.format(count), temp_ghost_frame)
                 continue
             
             if count > 0:
@@ -164,23 +164,23 @@ class StyleFrame:
             
             ghost_frame = np.asarray(self._trim_img(stylized_img))
 
-            ghost_frame = cv2.cvtColor(ghost_frame, cv2.COLOR_RGB2BGR) * self.MAX_CHANNEL_INTENSITY
-            cv2.imwrite(self.conf.OUTPUT_FRAME_PATH.format(count), ghost_frame)
+            temp_ghost_frame = cv2.cvtColor(ghost_frame, cv2.COLOR_RGB2BGR) * self.MAX_CHANNEL_INTENSITY
+            cv2.imwrite(self.conf.OUTPUT_FRAME_PATH.format(count), temp_ghost_frame)
         self.output_frame_directory = glob.glob(f'{self.conf.OUTPUT_FRAME_DIRECTORY}/*')
 
     def _color_correct_to_input(self, content, generated):
-        # image manipulations for compatibility with PILLOW
+        # image manipulations for compatibility with opencv
         content = np.array((content * self.MAX_CHANNEL_INTENSITY)).astype(np.uint8)
-        content = Image.fromarray(content).convert('YCbCr')
+        content = cv2.cvtColor(content, cv2.COLOR_BGR2YCR_CB)
         generated = np.array((generated * self.MAX_CHANNEL_INTENSITY)).astype(np.uint8)
-        generated = Image.fromarray(generated).convert('YCbCr')
-        generated = generated.resize((self.frame_width, self.conf.FRAME_HEIGHT))
-        # extract channels
-        _, cb, cr = content.split()
-        y, _, _ = generated.split()
-        # merge intensity and color spaces
-        color_corrected = Image.merge('YCbCr', (y, cb, cr))
-        return np.asarray(color_corrected.convert('RGB')) / self.MAX_CHANNEL_INTENSITY
+        generated = cv2.cvtColor(generated, cv2.COLOR_BGR2YCR_CB)
+        generated = self._trim_img(generated)
+        # extract channels, merge intensity and color spaces
+        color_corrected = np.zeros(generated.shape, dtype=np.uint8)
+        color_corrected[:, :, 0] = generated[:, :, 0]
+        color_corrected[:, :, 1] = content[:, :, 1]
+        color_corrected[:, :, 2] = content[:, :, 2]
+        return cv2.cvtColor(color_corrected, cv2.COLOR_YCrCb2BGR) / self.MAX_CHANNEL_INTENSITY
 
 
     def create_video(self):
