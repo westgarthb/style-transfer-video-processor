@@ -128,7 +128,8 @@ class StyleFrame:
                 next_is_content_img = True
             # If both, don't need to apply style transfer
             if prev_is_content_img and next_is_content_img:
-                cv2.imwrite(self.conf.OUTPUT_FRAME_PATH.format(count), ghost_frame)
+                temp_ghost_frame = cv2.cvtColor(ghost_frame, cv2.COLOR_RGB2BGR) * self.MAX_CHANNEL_INTENSITY
+                cv2.imwrite(self.conf.OUTPUT_FRAME_PATH.format(count), temp_ghost_frame)
                 continue
             
             if count > 0:
@@ -166,8 +167,8 @@ class StyleFrame:
             
             ghost_frame = np.asarray(self._trim_img(stylized_img))
 
-            ghost_frame = cv2.cvtColor(ghost_frame, cv2.COLOR_RGB2BGR) * self.MAX_CHANNEL_INTENSITY
-            cv2.imwrite(self.conf.OUTPUT_FRAME_PATH.format(count), ghost_frame)
+            temp_ghost_frame = cv2.cvtColor(ghost_frame, cv2.COLOR_RGB2BGR) * self.MAX_CHANNEL_INTENSITY
+            cv2.imwrite(self.conf.OUTPUT_FRAME_PATH.format(count), temp_ghost_frame)
         self.output_frame_directory = glob.glob(f'{self.conf.OUTPUT_FRAME_DIRECTORY}/*')
 
     def _color_correct_to_input(self, content, generated):
