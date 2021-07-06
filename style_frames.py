@@ -170,13 +170,13 @@ class StyleFrame:
 
     def _color_correct_to_input(self, content, generated):
         # image manipulations for compatibility with opencv
-        content = np.array((content * self.MAX_CHANNEL_INTENSITY)).astype(np.uint8)
+        content = np.array((content * self.MAX_CHANNEL_INTENSITY), dtype=np.float32)
         content = cv2.cvtColor(content, cv2.COLOR_BGR2YCR_CB)
-        generated = np.array((generated * self.MAX_CHANNEL_INTENSITY)).astype(np.uint8)
+        generated = np.array((generated * self.MAX_CHANNEL_INTENSITY), dtype=np.float32)
         generated = cv2.cvtColor(generated, cv2.COLOR_BGR2YCR_CB)
         generated = self._trim_img(generated)
         # extract channels, merge intensity and color spaces
-        color_corrected = np.zeros(generated.shape, dtype=np.uint8)
+        color_corrected = np.zeros(generated.shape, dtype=np.float32)
         color_corrected[:, :, 0] = generated[:, :, 0]
         color_corrected[:, :, 1] = content[:, :, 1]
         color_corrected[:, :, 2] = content[:, :, 2]
