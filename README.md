@@ -68,6 +68,8 @@ $ python3 style_frames.py
 ![file](/examples/example1_style_sequence.png)
 ##### Output Video
 ![file](/examples/example1.gif)
+##### Output Video with Preserved Colors
+![file](/examples/example3.gif)
 ### Example 2
 ##### Reference Style Image Transition Sequence
 ![file](/examples/example2_style_sequence.png)
